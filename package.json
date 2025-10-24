@@ -1,6 +1,14 @@
 {
+  "name": "socketio-drawing-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "bun server.ts"
+  },
   "dependencies": {
     "express": "^5.1.0",
     "socket.io": "^4.8.1"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
