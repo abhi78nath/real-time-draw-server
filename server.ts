@@ -26,9 +26,20 @@ type DrawEvent = {
 type CanvasEvent = BeginPathEvent | DrawEvent;
 
 const drawEvents: CanvasEvent[] = [];
+// Track connected users by socket id → display name
+const users = new Map<string, string>();
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
+
+  // User announces their presence with a name
+  socket.on("join", ({ name }: { name: string }) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return;
+    users.set(socket.id, trimmed);
+    io.emit("userJoined", trimmed);
+    io.emit("participants", Array.from(users.values()));
+  });
 
   socket.on("beginPath", (data) => {
     const payload: BeginPathEvent = { type: "beginPath", userId: socket.id, x: data.x, y: data.y };
@@ -75,6 +86,15 @@ io.on("connection", (socket) => {
     if (currentDrawer === socket.id) {
       currentDrawer = null;
       io.emit("drawRevoked");
+    }
+  });
+
+  socket.on("disconnect", () => {
+    const name = users.get(socket.id);
+    if (name) {
+      users.delete(socket.id);
+      io.emit("userLeft", name);
+      io.emit("participants", Array.from(users.values()));
     }
   });
 });
